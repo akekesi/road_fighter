@@ -8,6 +8,7 @@ class RoadFighter(customtkinter.CTk):
     speed = 1
     time = time.time()
     score = 0
+    distance = 0
     score_pos = "+"
     score_neg = "-"
 
@@ -52,8 +53,10 @@ class RoadFighter(customtkinter.CTk):
         self.entry_speed.grid(row=0, column=0, padx=0, pady=0)
         self.entry_time = customtkinter.CTkEntry(self.frame_info, width=105, state="disabled", justify="right")
         self.entry_time.grid(row=1, column=0, padx=0, pady=1)
+        self.entry_distance = customtkinter.CTkEntry(self.frame_info, width=105, state="disabled", justify="right")
+        self.entry_distance.grid(row=2, column=0, padx=0, pady=1)
         self.entry_score = customtkinter.CTkEntry(self.frame_info, width=105, state="disabled", justify="right")
-        self.entry_score.grid(row=2, column=0, padx=0, pady=0)
+        self.entry_score.grid(row=3, column=0, padx=0, pady=0)
 
         # frame - buttons
         self.frame_buttons = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -78,6 +81,7 @@ class RoadFighter(customtkinter.CTk):
         self.show()
         self.set_speed()
         self.set_time()
+        self.set_distance()
         self.set_score()
 
     def game(self):
@@ -138,6 +142,12 @@ class RoadFighter(customtkinter.CTk):
         self.after_id_time = self.after(100, self.set_time)
         self.entry_time.configure(state="disabled")
 
+    def set_distance(self):
+        self.entry_distance.configure(state="normal")
+        self.entry_distance.delete(0, "end")
+        self.entry_distance.insert(0, f"{int(5*self.distance)} m")
+        self.entry_distance.configure(state="disabled")
+
     def set_score(self):
         # if self.score > 1:
         #     self.after_cancel(self.after_id_game) # <-- does not work ?!?!?
@@ -157,6 +167,8 @@ class RoadFighter(customtkinter.CTk):
         print("show")
 
     def move(self):
+        self.distance += 1
+        self.set_distance()
         if self.road[7][self.car_idx] == self.score_pos:
             self.score += 1
             self.set_score()
