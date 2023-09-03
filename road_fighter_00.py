@@ -5,14 +5,12 @@ import customtkinter
 
 
 class RoadFighter(customtkinter.CTk):
+    win = 0
     speed = 1
     time = time.time()
     score = 0
     distance = 0
-    score_pos = "+"
-    score_neg = "-"
 
-    after_id_game = None
     after_id_time = None
 
     road_l = list("XX|")
@@ -20,13 +18,17 @@ class RoadFighter(customtkinter.CTk):
     road_r.reverse()
     road_m = list("  |  ")
     road_line = road_l + road_m + road_r
-
     road = []
     for i in range(10):
         road.append(copy.deepcopy(road_line))
 
-    car_idx = len(road_l) + len(road_m) - 1
+    car_x = len(road_l) + len(road_m) - 1
+    car_y = 8
     car = "↑"
+    score_p = "+"
+    score_n = "-"
+    score_w = "W"
+
 
     padx_grid = 10
     pady_grid = 10
@@ -76,63 +78,77 @@ class RoadFighter(customtkinter.CTk):
         self.bind("<Down>", self.down)
         self.bind("<Left>", self.left)
         self.bind("<Right>", self.right)
+        self.bind("<Escape>", self.close)
 
-        # init functions
-        self.show()
+        # init
         self.set_speed()
         self.set_time()
         self.set_distance()
         self.set_score()
 
     def game(self):
-        self.move()
+        if self.car_y < 0:
+            return
+        if self.win:
+            self.move_win()
+        else:
+            self.move()
         self.show()
         delay = int(1000 / self.speed)
         self.after_id_game = self.after(delay, self.game)
+
         print("game")
 
+    def show(self):
+        self.textbox.configure(state="normal")
+        self.textbox.delete(0.0,"end")
+        for r in self.road:
+            self.textbox.insert("end", "".join(r))
+        self.textbox.configure(state="disabled")
+        print("show")
+
     def up(self, event):
-        self.speed = min(10, self.speed + 0.5)
+        self.speed = min(20, self.speed + 1)
         self.set_speed()
         print(f"up")
 
     def down(self, event):
-        self.speed = max(1, self.speed - 0.5)
+        self.speed = max(1, self.speed - 1)
         self.set_speed()
         print(f"down")
 
     def left(self, event):
-        car_pre = self.car_idx
-        self.car_idx = max(len(self.road_l), self.car_idx - 1)
-        if self.road[8][self.car_idx] == self.score_pos:
+        car_pre = self.car_x
+        self.car_x = max(len(self.road_l), self.car_x - 1)
+        if self.road[self.car_y][self.car_x] == self.score_p:
             self.score += 1
             self.set_score()
-        if self.road[8][self.car_idx] == self.score_neg:
+        if self.road[self.car_y][self.car_x] == self.score_n:
             self.score -= 1
             self.set_score()
-        self.road[8][car_pre] = self.road_line[car_pre]
-        self.road[8][self.car_idx] = self.car
+        self.road[self.car_y][car_pre] = self.road_line[car_pre]
+        self.road[self.car_y][self.car_x] = self.car
         self.show()
         print("left")
 
     def right(self, event):
-        car_pre = self.car_idx
-        self.car_idx = min(len(self.road_l) + len(self.road_m) - 1, self.car_idx + 1)
-        if self.road[8][self.car_idx] == self.score_pos:
+        car_pre = self.car_x
+        self.car_x = min(len(self.road_l) + len(self.road_m) - 1, self.car_x + 1)
+        if self.road[self.car_y][self.car_x] == self.score_p:
             self.score += 1
             self.set_score()
-        if self.road[8][self.car_idx] == self.score_neg:
+        if self.road[self.car_y][self.car_x] == self.score_n:
             self.score -= 1
             self.set_score()
-        self.road[8][car_pre] = self.road_line[car_pre]
-        self.road[8][self.car_idx] = self.car
+        self.road[self.car_y][car_pre] = self.road_line[car_pre]
+        self.road[self.car_y][self.car_x] = self.car
         self.show()
         print("right")
 
     def set_speed(self):
         self.entry_speed.configure(state="normal")
         self.entry_speed.delete(0, "end")
-        self.entry_speed.insert(0, f"{int(20*self.speed)} km/h")
+        self.entry_speed.insert(0, f"{self.speed} km/h")
         self.entry_speed.configure(state="disabled")
 
     def set_time(self):
@@ -145,47 +161,56 @@ class RoadFighter(customtkinter.CTk):
     def set_distance(self):
         self.entry_distance.configure(state="normal")
         self.entry_distance.delete(0, "end")
-        self.entry_distance.insert(0, f"{int(5*self.distance)} m")
+        self.entry_distance.insert(0, f"{self.distance} m")
         self.entry_distance.configure(state="disabled")
 
     def set_score(self):
-        # if self.score > 1:
-        #     self.after_cancel(self.after_id_game) # <-- does not work ?!?!?
-        #     self.after_cancel(self.after_id_time)
-        #     return
         self.entry_score.configure(state="normal")
         self.entry_score.delete(0, "end")
-        self.entry_score.insert(0, f"{100*self.score} $")
+        self.entry_score.insert(0, f"{self.score} $")
         self.entry_score.configure(state="disabled")
-
-    def show(self):
-        self.textbox.configure(state="normal")
-        self.textbox.delete(0.0,"end")
-        for r in self.road:
-            self.textbox.insert("end", "".join(r))
-        self.textbox.configure(state="disabled")
-        print("show")
 
     def move(self):
         self.distance += 1
         self.set_distance()
-        if self.road[7][self.car_idx] == self.score_pos:
+        if self.road[7][self.car_x] == self.score_w:
+            self.score += 5
+            self.set_score()
+            self.after_cancel(self.after_id_time)
+            self.win = 1
+        if self.road[7][self.car_x] == self.score_p:
             self.score += 1
             self.set_score()
-        if self.road[7][self.car_idx] == self.score_neg:
+        if self.road[7][self.car_x] == self.score_n:
             self.score -= 1
             self.set_score()
         new = copy.deepcopy(self.road_line)
-        if not (random.randint(1, 4) % 4):
-            if not (random.randint(1, 2) % 2):
-                new[random.randint(len(self.road_l), len(self.road_l) + len(self.road_m) - 1)] = self.score_pos
-            else:
-                new[random.randint(len(self.road_l), len(self.road_l) + len(self.road_m) - 1)] = self.score_neg
+        if self.distance < 25:
+            if not (random.randint(1, 4) % 4):
+                if not (random.randint(1, 2) % 2):
+                    new[random.randint(len(self.road_l), len(self.road_l) + len(self.road_m) - 1)] = self.score_p
+                else:
+                    new[random.randint(len(self.road_l), len(self.road_l) + len(self.road_m) - 1)] = self.score_n
+        if self.distance == 25:
+            new[random.randint(len(self.road_l), len(self.road_l) + len(self.road_m) - 1)] = self.score_w
         self.road.insert(0, new)
-        self.road[8][self.car_idx] = self.car
-        self.road[9][self.car_idx] = self.road_line[self.car_idx]
+        self.road[self.car_y][self.car_x] = self.car
+        self.road[9][self.car_x] = self.road_line[self.car_x]
         self.road.pop()
-        print("move")
+        print("move_game")
+
+    def move_win(self):
+        new = copy.deepcopy(self.road_line)
+        self.road.insert(0, new)
+        self.road[self.car_y + 1][self.car_x] = self.road_line[self.car_x]
+        self.car_y -= 1
+        self.road[self.car_y][self.car_x] = self.car
+        self.road.pop()
+        print("move_win")
+
+    def close(self, event):
+        self.destroy()
+        print("close")
 
 
 if __name__ == "__main__":
